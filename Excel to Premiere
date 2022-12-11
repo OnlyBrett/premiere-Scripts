@@ -1,0 +1,52 @@
+// Import the required modules
+var fs = require("fs");
+var app = require("adobe-extendscript-app");
+
+// Set the Premiere Pro and Excel variables
+var premiere = app.applications.premiere;
+var excel = app.applications.excel;
+
+// Open the Excel file and get the active sheet
+var excelFile = excel.open("C:\\Timecodes.xlsx");
+var sheet = excelFile.activeSheet;
+
+// Loop through each row in the sheet
+for (var i = 1; i <= sheet.rows.count; i++) {
+  // Get the asset name and timecodes from the current row
+  var assetName = sheet.cells(i, 1).value;
+  var timecodes = sheet.cells(i, 2).value;
+
+  // Open the asset in Premiere Pro and get the timeline
+  var assetPath = "C:\\Assets\\" + assetName + ".mp4";
+  var asset = premiere.open(assetPath);
+  var timeline = asset.activeSequence;
+
+  // Split the timecodes string into an array
+  var timecodesArray = timecodes.split(",");
+
+  // Loop through each timecode in the array
+  for (var j = 0; j < timecodesArray.length; j++) {
+    // Get the start and end time of the current timecode
+    var timecode = timecodesArray[j];
+    var timecodeParts = timecode.split("-");
+    var startTime = timecodeParts[0];
+    var endTime = timecodeParts[1];
+
+    // Convert the timecodes to milliseconds
+    var startTimeMs = timeToMs(startTime);
+    var endTimeMs = timeToMs(endTime);
+
+    // Add a new cut to the timeline at the specified time
+    timeline.addCut(startTimeMs, endTimeMs);
+  }
+}
+
+// Function to convert timecodes to milliseconds
+function timeToMs(timecode) {
+  var timecodeParts = timecode.split(":");
+  var hours = parseInt(timecodeParts[0]);
+  var minutes = parseInt(timecodeParts[1]);
+  var seconds = parseInt(timecodeParts[2]);
+  var milliseconds = parseInt(timecodeParts[3]);
+  return ((hours * 3600) + (minutes * 60) + seconds) * 1000 + milliseconds;
+}
